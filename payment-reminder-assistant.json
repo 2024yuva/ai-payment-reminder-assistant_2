@@ -1,0 +1,743 @@
+{
+  "name": "My workflow 7",
+  "nodes": [
+    {
+      "parameters": {
+        "function": "arn:aws:lambda:us-east-1:253490765446:function:daily-reminder-trigger",
+        "invocationType": "Event",
+        "payload": "={\n  \"payment_id\": \"pay001\",\n  \"due_date\": \"2025-08-03\",\n  \"amount\": 1500\n}"
+      },
+      "type": "n8n-nodes-base.awsLambda",
+      "typeVersion": 1,
+      "position": [
+        752,
+        0
+      ],
+      "id": "ae21ce2a-dc82-48c8-827a-4f8d2b0b9307",
+      "name": "AWS Lambda",
+      "credentials": {
+        "aws": {
+          "id": "ZVHW24d9hfrAXJlA",
+          "name": "AWS account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.11labs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "xi-api-key",
+              "value": "Bearer sk_fe37423fb58ebd18a13c20432759bab3e744c0f018009037"
+            },
+            {
+              "name": "Content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"Hello! This is your payment teminder assistant! It's about your upcoming payment of 865, which is due tomorrow, August 10th, 2025. Can you confirm you'll be able to pay this by tomorrow?\",\n  \"voice_settings\": {\n    \"style\": \"excited\",\n    \"stability\": 0.75,\n    \"similarity_boost\": 0.75\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1792,
+        32
+      ],
+      "id": "ff87d0ff-430d-4d2c-b021-6f48cb12f1e3",
+      "name": "11labs",
+      "alwaysOutputData": true,
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "curlImport": "",
+        "httpVariantWarning": "",
+        "method": "POST",
+        "url": "https://v2.convertapi.com/",
+        "": "",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "convertApi",
+        "provideSslCertificates": false,
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "Phone Number",
+              "value": "=+91 9566066245"
+            },
+            {
+              "name": "Assistant Message",
+              "value": "=Hello, I'm your payment reminder assistant! We're calling about your upcoming payment of $865, which is due tomorrow, August 10th, 2025.\n\nCan you confirm you'll be able to pay this by tomorrow?"
+            }
+          ]
+        },
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {},
+        "infoMessage": ""
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1968,
+        16
+      ],
+      "id": "09f9e17b-4c21-405f-92f4-fa11c042d1d3",
+      "name": "vapi",
+      "extendsCredential": "convertApi",
+      "credentials": {
+        "convertApi": {
+          "id": "aGt4AR7WKtuIUy03",
+          "name": "ConvertAPI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "yes.",
+        "options": {
+          "systemMessage": "=Friendly Payment Reminder Assistant System Prompt\n\nYou're a friendly payment assistant for payment reminders! Your goal is to be helpful, conversational, and guide customers through the payment confirmation process.\n\n## Steps:\n1. **Remind about payment**: Mention the amount due and due date in a friendly way\n2. **Ask for confirmation**: \"Can you confirm you'll pay by tomorrow?\"\n3. **Process response** based on user's reply\n\n## User Response Handling:\n\n### If says YES/CONFIRMED:\n- **Response**: \"Great! I'll mark this as confirmed. Thank you!\"\n- **Action**: → Set status=confirmed\n\n### If says \"DISPUTE\" or \"PROBLEM\":\n- **Response**: \"I'll connect you to a support agent shortly.\"\n- **Action**: → Trigger SMS to human agent\n\n### If UNCLEAR response:\n- **Response**: \"Sorry, I didn't catch that. Could you say 'yes' or 'no'?\"\n\n## Additional Features & User Questions:\n\n### Payment Method Questions:\n- **User asks**: \"How can I pay?\" / \"What payment methods?\"\n- **Response**: \"You can pay via [insert payment methods: online portal, bank transfer, credit card, etc.]. Would you like me to send you the payment link?\"\n\n### Payment Amount Questions:\n- **User asks**: \"How much do I owe?\" / \"What's the amount?\"\n- **Response**: \"Your outstanding amount is $[amount] due on [date]. Can you confirm you'll pay by tomorrow?\"\n\n### Due Date Questions:\n- **User asks**: \"When is this due?\" / \"What's the deadline?\"\n- **Response**: \"Your payment of $[amount] was due on [original_due_date]. Can you confirm you'll pay by tomorrow?\"\n\n### Extension Requests:\n- **User asks**: \"Can I get more time?\" / \"Need extension\"\n- **Response**: \"I understand you need more time. Let me connect you with our support team to discuss payment options.\"\n- **Action**: → Trigger SMS to human agent\n\n### Already Paid Claims:\n- **User says**: \"I already paid\" / \"Payment sent\"\n- **Response**: \"Thank you for letting me know! I'll have our team verify the payment. If there's any issue, we'll contact you.\"\n- **Action**: → Set status=payment_claimed\n\n### Technical Issues:\n- **User says**: \"Can't access account\" / \"Website not working\"\n- **Response**: \"I'm sorry to hear about the technical issue. Let me connect you with support to help resolve this.\"\n- **Action**: → Trigger SMS to human agent\n\n### Financial Hardship:\n- **User mentions**: \"Can't afford\" / \"Financial difficulty\" / \"Lost job\"\n- **Response**: \"I understand this may be a difficult time. Our support team can discuss payment plan options with you.\"\n- **Action**: → Trigger SMS to human agent\n\n### Wrong Person:\n- **User says**: \"Wrong number\" / \"Not me\" / \"Don't know this\"\n- **Response**: \"I apologize for the confusion. I'll remove this number from our system. Have a great day!\"\n- **Action**: → Set status=wrong_contact\n\n### General Questions:\n- **User asks**: \"What company is this?\" / \"Who are you?\"\n- **Response**: \"This is [Company Name] regarding your account. You have a payment of $[amount] due. Can you confirm you'll pay by tomorrow?\"\n\n### Rude/Hostile Responses:\n- **User is rude**: Stay professional and helpful\n- **Response**: \"I understand this may be frustrating. I'm just here to help with your payment. Can you confirm you'll pay by tomorrow, or would you prefer to speak with our support team?\"\n\n## Conversation Flow:\n1. **Start friendly**: \"Hi, I'm your payment reminder assistant! it's regarding your payment of {{ $vars.amount }}  is due on {{ $vars.due_date }}.\n2. **Ask confirmation**: \"Can you confirm you'll pay by tomorrow?\"\n3. **Handle response** according to guidelines above\n4. **Keep it conversational**: Use natural, friendly language\n5. **Stay on topic**: Always try to guide back to payment confirmation\n6. **Escalate when needed**: Don't hesitate to connect to human agent for complex issues\n\n## Key Principles:\n- **Be friendly and conversational**\n- **Stay patient and helpful**\n- **Acknowledge user concerns**\n- **Provide clear next steps**\n- **Know when to escalate to human agent**\n- **Keep responses concise but complete**\n\n## Status Codes to Set:\n- `status=confirmed` - Customer confirmed payment\n- `status=payment_claimed` - Customer says already paid\n- `status=wrong_contact` - Wrong person/number\n- `status=escalated` - Sent to human agent\n\nRemember: You're here to help, not pressure. Keep it friendly and professional!"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        384,
+        160
+      ],
+      "id": "7b24b303-5efb-423c-8b21-8caaf18bdb58",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "yuvarrunjithars@gmail.com",
+          "mode": "list",
+          "cachedResultName": "yuvarrunjithars@gmail.com"
+        },
+        "useDefaultReminders": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Use_Default_Reminders', ``, 'boolean') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        384
+      ],
+      "id": "b0848a2e-39d6-48c7-8f52-5158b9f77560",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "9Xsslkit6veVE9Xy",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"results\": [\n    {\n      \"toolCallId\": \"99eb21ba-c7f9-40f3-8daf-e75a11f53c96\",\n      \"result\": \"yes\"\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        2176,
+        16
+      ],
+      "id": "35e63f58-229d-480f-ba6b-26bbd315ab93",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "afc00a7e-8386-48e0-83ab-b009bc293b20",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        16
+      ],
+      "id": "21b1961b-bf4b-4e3e-b3ee-d705db751f47",
+      "name": "Webhook",
+      "webhookId": "dd6bee44-dad3-4529-807f-3b91973907b1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=my_test_session"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        400
+      ],
+      "id": "989d1ffa-b87b-4ca5-830a-6e6605e9e51a",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        224,
+        352
+      ],
+      "id": "7b5db16f-291d-4a1b-a567-d539df5c18a3",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0X9s3EYSmPrOxLiL",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "dc0f22fd-8459-4bd2-8bec-8a29a06d285e",
+              "leftValue": "={{$json[\"emotion\"]}}\n",
+              "rightValue": "=happy",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "4fadb40a-d103-4a19-8d92-3368038ecfaf",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        176
+      ],
+      "id": "be27b608-2240-45af-af9b-cd0ed68ffe9d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e3e72232-a7bb-453e-9e7e-3201bfdd1c99",
+              "name": "voice_name",
+              "value": "ana",
+              "type": "string"
+            },
+            {
+              "id": "201145fa-e4cf-4395-a273-bfc49183b6e6",
+              "name": "voice_style",
+              "value": "Young British female voice, expressive and emotional.",
+              "type": "string"
+            },
+            {
+              "id": "203eb458-1c7f-4000-bb03-8476ce6f2ab3",
+              "name": "voice_id",
+              "value": "vibfi5nlk3hs8Mtvf9Oy",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1504,
+        304
+      ],
+      "id": "90f5e45c-d319-488d-9238-8e8d6e0ad3d6",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a39a8413-b8e9-406b-bf92-5b683806e4e4",
+              "name": "voice_name",
+              "value": "Theo",
+              "type": "string"
+            },
+            {
+              "id": "e0e73b0c-79cc-4413-9c42-ab861a5b4828",
+              "name": "voice_style ",
+              "value": "Friendly, optimistic, warm male voice. Great for upbeat narration.",
+              "type": "string"
+            },
+            {
+              "id": "6c49ca99-4965-4729-9d7d-a2f689fbbec7",
+              "name": "voice_id",
+              "value": "NyxenPOqNyllHIzSoPbJ",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        160
+      ],
+      "id": "9c0cb076-4d5a-41bd-ad4a-1565ca6beb52",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e555e75f-3b58-4d43-8aca-e385725a35d6",
+              "leftValue": "={{$json[\"emotion\"]}}",
+              "rightValue": "neutral",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1456,
+        432
+      ],
+      "id": "22b613c9-961c-4a47-9d85-e02f03c27a07",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5068dfb8-521b-4c4f-81c7-e581b144a6ea",
+              "name": "voice_name",
+              "value": "Hope",
+              "type": "string"
+            },
+            {
+              "id": "ab47b302-bfea-4bbc-bcb3-80bbb6ef61ef",
+              "name": "voice_style",
+              "value": "Sultry, intense, soft-spoken with vocal fry—can convey tension.",
+              "type": "string"
+            },
+            {
+              "id": "c9a84530-e902-41b0-a895-c4357432772d",
+              "name": "voice_id",
+              "value": "wRINGYlUf1HpTQz8M9mA",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1648,
+        432
+      ],
+      "id": "521a7db9-308f-4921-84cd-36c2755d2c44",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a2dedf46-a6ed-45ed-b457-b24f0b732bda",
+              "name": "voice_name",
+              "value": "Francesco",
+              "type": "string"
+            },
+            {
+              "id": "853c6ed2-fefc-47c8-8aa3-5050b91a03dd",
+              "name": "voice_style",
+              "value": "Narrative, middle-aged Italian male voice. Ideal for calm delivery.",
+              "type": "string"
+            },
+            {
+              "id": "abd9c5d9-6f31-4479-ab81-869fe957656f",
+              "name": "voice_id",
+              "value": "GOAZNavLupajyL3YafaD",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1664,
+        608
+      ],
+      "id": "41dbfb09-77aa-4122-880a-c3479d55bae0",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.output }}\n",
+        "options": {
+          "categories": "Positive, Neutral, Negative",
+          "systemPromptTemplate": "Your entire output must be exactly one of these words and nothing else: Positive, Neutral, Negative\n",
+          "includeDetailedResults": true,
+          "enableAutoFixing": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.sentimentAnalysis",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        464
+      ],
+      "id": "a1500f79-90f4-4cc2-8a82-496552e4bc50",
+      "name": "Sentiment Analysis"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3da35b11-f3b4-423f-938d-a1497d101d88",
+              "leftValue": "={{$json[\"emotion\"]}}",
+              "rightValue": "sad",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        256
+      ],
+      "id": "ca716dba-de28-4fc7-af1b-8a15ac275f05",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        752,
+        768
+      ],
+      "id": "22992f31-addf-4f38-9080-f5322c49f1f4",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0X9s3EYSmPrOxLiL",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AWS Lambda": {
+      "main": [
+        [
+          {
+            "node": "11labs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11labs": {
+      "main": [
+        [
+          {
+            "node": "vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "vapi": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Sentiment Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AWS Lambda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "11labs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "11labs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "11labs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "11labs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment Analysis": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sentiment Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ec63e1ab-664b-42e1-ae92-b940ad746fb2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "edfe4a38b704fde4c17ddb72ff3988cae256dee7e70ccfb3091df18f547b209d"
+  },
+  "id": "e7caNn3LjJ7Z28NL",
+  "tags": []
+}
